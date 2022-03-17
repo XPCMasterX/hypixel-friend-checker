@@ -3,3 +3,4 @@ rm -rf docs
 mkdir -p docs
 cp -r public/* docs/
 echo "Copied all files"
+echo "Remember to change absolute paths in docs/index.html"
