@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: hApiHelper.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: hApiHelper.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>let ownUUID = '08adf3db-7e0a-448b-aad3-321390a3b09b';
+
+/* #region */
+/* 
+.-:::::'...    ::::::.    :::.  .,-::::::::::::::::::::    ...   :::.    :::. .::::::. 
+;;;'''' ;;     ;;;`;;;;,  `;;;,;;;'````';;;;;;;;'''';;; .;;;;;;;.`;;;;,  `;;;;;;`    ` 
+[[[,,==[['     [[[  [[[[[. '[[[[[            [[     [[[,[[     \[[,[[[[[. '[['[==/[[[[,
+`$$$"``$$      $$$  $$$ "Y$c$$$$$            $$     $$$$$$,     $$$$$$ "Y$c$$  '''    $
+ 888   88    .d888  888    Y88`88bo,__,o,    88,    888"888,_ _,88P888    Y88 88b    dP
+ "MM,   "YmmMMMM""  MMM     YM  "YUMMMMMP"   MMM    MMM  "YMMMMMP" MMM     YM  "YMmMY" 
+ */
+
+// /**
+//  * Returns the UUID of API key owner
+//  * @param {string} apiKey
+//  * @returns {string} UUID of API key owner
+//  */
+// async function getUUID(apiKey) {
+//   let result = await fetch(`https://api.hypixel.net/key?key=${apiKey}`)
+//     .then((result) => result.json())
+//     .then((result) => {
+//       return result;
+//     });
+//   return result.record.owner;
+// }
+
+/**
+ * Gets the friends of the player
+ * @param {string} apiKey
+ * @returns {Array} UUIDs
+ */
+async function getFriends(apiKey, ownUUID) {
+    let results = await fetch(
+        `https://api.hypixel.net/friends?key=${apiKey}&amp;uuid=${ownUUID}`
+    )
+        .then((result) => result.json())
+        .then((result) => {
+            return result.records;
+        });
+
+    ownUUID = ownUUID.replace(/[- ]/g, '');
+
+    let UUIDArray = [];
+
+    for (let i = 0; i &lt; results.length; i++) {
+        if (results[i].uuidSender === ownUUID) {
+            UUIDArray.push(results[i].uuidReceiver);
+        } else {
+            UUIDArray.push(results[i].uuidSender);
+        }
+    }
+
+    return UUIDArray;
+}
+
+/**
+ * Converts UUID to display name
+ * @param {string} apiKey
+ * @param {string} UUID
+ * @returns {string} Name
+ */
+async function getNameFromUUID(apiKey, UUID) {
+    let results = fetch(
+        `https://api.hypixel.net/player?key=${apiKey}&amp;uuid=${UUID}`
+    )
+        .then((result) => result.json())
+        .then((result) => {
+            return result.player.displayname;
+        });
+    return results;
+}
+
+/**
+ * Converts an array of UUIDs to display names
+ * @param {string} apiKey
+ * @param {Array} UUIDArray
+ * @param {string} ownUUID
+ * @returns {Array} Display names
+ */
+async function convertToNames(apiKey, UUIDArray, ownUUID) {
+    ownUUID = ownUUID.replace(/[- ]/g, '');
+
+    let names = [];
+
+    for (let i = 0; i &lt; UUIDArray.length; i++) {
+        let name = await getNameFromUUID(apiKey, UUIDArray[i]);
+        names.push(name);
+    }
+
+    return names;
+}
+
+/**
+ * Checks if a player is online or not
+ * @param {string} apiKey
+ * @param {string} UUID
+ * @returns {boolean} Online status
+ */
+async function checkOnlineStatus(apiKey, UUID) {
+    let result = fetch(
+        `https://api.hypixel.net/status?key=${apiKey}&amp;uuid=${UUID}`
+    )
+        .then((result) => result.json())
+        .then((result) => {
+            return result.session.online;
+        });
+    return result;
+}
+
+/**
+ * Sorts friends array to the online ones at
+ * the start
+ * @param {Array} friends
+ * @returns {Array} sortedFriends
+ */
+async function sortFriends(friends) {
+    let sortedFriends = [];
+    for (let i = 0; i &lt; friends.length; i++) {
+        if (friends[i].onlineStatus === true) {
+            sortedFriends.push(friends[i]);
+        }
+    }
+    for (let i = 0; i &lt; friends.length; i++) {
+        if (friends[i].onlineStatus === false) {
+            sortedFriends.push(friends[i]);
+        }
+    }
+    return sortedFriends;
+}
+
+/**
+ * Checks the online status of all the friends of a player
+ * @param {string} apiKey
+ * @returns {Array} Objects containing name of player and their online status
+ */
+async function checkOnlineStatusOfFriends(apiKey, update) {
+    let friendsUUID = await getFriends(apiKey, ownUUID);
+    let friends = await convertToNames(apiKey, friendsUUID, ownUUID);
+    let friendsWithStatus = [];
+
+    for (let i = 0; i &lt; friendsUUID.length; i++) {
+        let onlineStatus = await checkOnlineStatus(apiKey, friendsUUID[i]);
+        friendsWithStatus.push({
+            name: friends[i],
+            onlineStatus: onlineStatus,
+        });
+        await update(i, friendsUUID.length);
+    }
+    await update(friendsUUID.length, friendsUUID.length);
+
+    let sortedFriends = await sortFriends(friendsWithStatus);
+    return sortedFriends;
+}
+/* #endregion */
+
+export { checkOnlineStatusOfFriends };
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#checkOnlineStatus">checkOnlineStatus</a></li><li><a href="global.html#checkOnlineStatusOfFriends">checkOnlineStatusOfFriends</a></li><li><a href="global.html#convertToNames">convertToNames</a></li><li><a href="global.html#getFriends">getFriends</a></li><li><a href="global.html#getNameFromUUID">getNameFromUUID</a></li><li><a href="global.html#sortFriends">sortFriends</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Thu Mar 17 2022 19:48:23 GMT+0000 (Coordinated Universal Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
