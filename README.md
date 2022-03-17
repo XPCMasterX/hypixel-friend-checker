@@ -4,5 +4,4 @@ check friends who are online
 
 # install
 
-`npm run build`  
-`./gh-pages.sh`
+`npm run build`
