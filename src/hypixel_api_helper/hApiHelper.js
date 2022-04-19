@@ -140,9 +140,13 @@ async function checkOnlineStatusOfFriends(apiKey, update) {
 
     for (let i = 0; i < friendsUUID.length; i++) {
         let onlineStatus = await checkOnlineStatus(apiKey, friendsUUID[i]);
+        let lastLogin = await getLastLogin(apiKey, friendsUUID[i]);
+        lastLogin = await formatUnixTimeStamp(lastLogin);
+
         friendsWithStatus.push({
             name: friends[i],
             onlineStatus: onlineStatus,
+            lastLogin: lastLogin,
         });
         await update(i, friendsUUID.length);
     }
@@ -150,6 +154,40 @@ async function checkOnlineStatusOfFriends(apiKey, update) {
 
     let sortedFriends = await sortFriends(friendsWithStatus);
     return sortedFriends;
+}
+
+/**
+ * Returns how long ago a player was online
+ * @param {string} apiKey 
+ * @param {string} UUID 
+ * @returns {Date} timestamp
+ */
+async function getLastLogin(apiKey, UUID) {
+    let result = fetch(
+        `https://api.hypixel.net/player?key=${apiKey}&uuid=${UUID}`
+    )
+        .then((result) => result.json())
+        .then((result) => {
+            return (
+                ((Date.now() / 1000) | 0) - ((result.player.lastLogout / 1000) | 0)
+            );
+        });
+    return result;
+}
+
+/**
+ * Formats timestamp into human readable form
+ * @param {integer} timestamp 
+ * @returns 
+ */
+async function formatUnixTimeStamp(timestamp) {
+    let time = {
+        seconds: timestamp % 60,
+        minutes: Math.floor(timestamp / 60) % 60,
+        hours: Math.floor(timestamp / 3600) % 24,
+        days: Math.floor(timestamp / 86400),
+    };
+    return `${time.days} days, ${time.hours} hours ago`;
 }
 /* #endregion */
 

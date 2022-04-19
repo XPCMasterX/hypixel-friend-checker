@@ -15,7 +15,6 @@
     function updateProgress(i, len) {
         progressText = `${i} / ${len}`;
     } // Number from 0.0 to 1.0
-
     onMount(() => {
         updateData();
     });
@@ -44,7 +43,9 @@
             {:else if !friend.onlineStatus}
                 <div class="friend-container offline">
                     <span class="name">{friend.name}</span>
-                    <span class="status">offline</span>
+                    <span class="status"
+                        >offline - last online {friend.lastLogin}</span
+                    >
                 </div>
             {/if}
         {/each}
